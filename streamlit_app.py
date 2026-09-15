@@ -40,7 +40,7 @@ CSS = """
 <style>
 .join-card{text-align:center;padding:.5rem 0}
 .join-card .label{font-size:1.05rem;opacity:.75;margin:0}
-.join-card .url{font-size:clamp(1.1rem,2.6vw,1.7rem);font-weight:600;word-break:break-all;margin:.1rem 0 .9rem}
+.join-card .url{font-size:clamp(1rem,1.9vw,1.6rem);font-weight:600;overflow-wrap:anywhere;margin:.1rem 0 .9rem}
 .join-card .code{font-size:clamp(3rem,8vw,5.5rem);font-weight:800;letter-spacing:.08em;line-height:1;
   font-variant-numeric:tabular-nums;margin:.1rem 0}
 .quiz-question{font-size:1.35rem;font-weight:600;line-height:1.35;margin:.2rem 0 .6rem}
@@ -139,6 +139,12 @@ def app_url() -> str:
     parts = urlsplit(current)
     path = parts.path.replace("/~/+", "") or "/"   # Community Cloud serves the app from an inner path
     return urlunsplit((parts.scheme, parts.netloc, path if path.endswith("/") else path + "/", "", ""))
+
+
+def short_url(url: str) -> str:
+    """The address as people type it: https://quiz.example.com/ → quiz.example.com."""
+    parts = urlsplit(url)
+    return (parts.netloc + parts.path).rstrip("/") or url
 
 
 def join_link(code: str) -> str:
@@ -592,7 +598,7 @@ def join_card(quiz: Quiz) -> None:
         text, image = st.columns([3, 2], vertical_alignment="center")
         with text:
             st.markdown(
-                f'<div class="join-card"><p class="label">Go to</p><p class="url">{html.escape(app_url())}</p>'
+                f'<div class="join-card"><p class="label">Go to</p><p class="url">{html.escape(short_url(app_url()))}</p>'
                 f'<p class="label">and type the code</p><p class="code">{tx.format_code(quiz.code)}</p></div>',
                 unsafe_allow_html=True,
             )

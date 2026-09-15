@@ -1,0 +1,24 @@
+# Accent color per theme; the app still follows the viewer's light/dark setting.
+[theme.light]
+primaryColor = "#0F766E"
+
+[theme.dark]
+primaryColor = "#2DD4BF"
+
+[server]
+maxUploadSize = 1
+# Checking every loaded module for changes after each interaction costs far more CPU than the quiz itself.
+# Without it, code changes apply after restarting the app (which also clears the quizzes in memory).
+fileWatcherType = "none"
+runOnSave = false
+
+[runner]
+# A full garbage collection after every interaction takes ~100 ms of CPU with pandas loaded; Python's regular
+# collector is enough, and many people answer at the same time during a quiz.
+postScriptGC = false
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

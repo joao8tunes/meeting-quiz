@@ -1,0 +1,59 @@
+<style>
+  :root { --fg: #0f172a; --muted: #64748b; --track: rgba(15, 23, 42, .08); --accent: #0f766e; --warn: #dc2626; }
+  :root.dark { --fg: #f1f5f9; --muted: #94a3b8; --track: rgba(241, 245, 249, .12); --accent: #2dd4bf; --warn: #f87171; }
+  html, body { margin: 0; background: transparent; font-family: "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); }
+  .wrap { display: flex; align-items: center; gap: 14px; padding: 6px 2px; }
+  .clock { font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+  .label { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .track { flex: 1; height: 8px; border-radius: 99px; background: var(--track); overflow: hidden; }
+  .bar { height: 100%; width: 100%; background: var(--accent); border-radius: 99px; transform-origin: left; }
+  .small .clock { font-size: 22px; }
+  .large .wrap { flex-direction: column; align-items: stretch; gap: 10px; }
+  .large .row { display: flex; align-items: baseline; justify-content: space-between; }
+  .large .clock { font-size: 64px; line-height: 1; }
+  .large .label { font-size: 18px; }
+  .large .track { height: 14px; flex: none; }
+  .ending .clock, .ending .label { color: var(--warn); }
+  .ending .bar { background: var(--warn); }
+  .ending.pulse .clock { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .ending.pulse .clock { animation: none; } }
+</style>
+<div id="root" class="small">
+  <div class="wrap">
+    <div class="row"><span class="label" id="label"></span> <span class="clock" id="clock">--:--</span></div>
+    <div class="track"><div class="bar" id="bar"></div></div>
+  </div>
+</div>
+<script>
+  const DATA = __PAYLOAD__;
+  const root = document.getElementById("root");
+  const clock = document.getElementById("clock");
+  const label = document.getElementById("label");
+  const bar = document.getElementById("bar");
+  if (DATA.dark) document.documentElement.classList.add("dark");
+  root.className = DATA.large ? "large" : "small";
+  const start = performance.now();
+
+  function format(seconds) {
+    const s = Math.max(0, Math.ceil(seconds));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    const mm = String(m).padStart(2, "0"), ss = String(r).padStart(2, "0");
+    return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
+  let timer = null;
+  function tick() {
+    const left = DATA.remaining - (performance.now() - start) / 1000;
+    const done = left <= 0;
+    clock.textContent = done ? "00:00" : format(left);
+    label.textContent = done ? DATA.doneLabel : DATA.label;
+    const share = DATA.total ? Math.max(0, Math.min(1, left / DATA.total)) : 1;
+    bar.style.transform = `scaleX(${share})`;
+    root.classList.toggle("ending", left <= Math.min(10, (DATA.total || 60) * 0.2));
+    root.classList.toggle("pulse", !done);
+    if (done && timer) clearInterval(timer);
+  }
+  tick();
+  timer = setInterval(tick, 250);
+</script>

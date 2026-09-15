@@ -1,0 +1,217 @@
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: "Source Sans Pro", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .stage {
+    position: relative; height: 100vh; overflow: hidden; border-radius: 16px; color: #f8fafc;
+    background: radial-gradient(120% 90% at 50% 0%, #115e59 0%, #0b1324 55%, #1e1b4b 100%);
+    display: flex; flex-direction: column; align-items: center; padding: 18px 20px 14px;
+  }
+  .sparkles { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(1.5px 1.5px at 12% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 72% 12%, #fff 50%, transparent 51%), radial-gradient(1.5px 1.5px at 88% 48%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 30% 70%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 55% 35%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 6% 82%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 94% 88%, #fff 50%, transparent 51%);
+    animation: twinkle 4s ease-in-out infinite alternate; }
+  @keyframes twinkle { to { opacity: .15; } }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+  header { text-align: center; z-index: 1; max-width: 100%; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .18em; font-size: 13px; color: #5eead4; font-weight: 700; }
+  h1 { margin: 4px 0 2px; font-size: clamp(22px, 3.2vw, 34px); line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .subtitle { margin: 0; color: #cbd5e1; font-size: 15px; }
+  .podium { flex: none; display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin-top: 18px; width: 100%; max-width: 820px; z-index: 1; }
+  .spot { flex: 1; max-width: 250px; display: flex; flex-direction: column; align-items: stretch; }
+  .spot.p1 { order: 2; } .spot.p2 { order: 1; } .spot.p3 { order: 3; }
+  .card { perspective: 900px; height: 118px; margin-bottom: 10px; }
+  .card-inner { position: relative; height: 100%; transition: transform .8s cubic-bezier(.2, .8, .2, 1); transform-style: preserve-3d; }
+  .card.revealed .card-inner { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; border-radius: 14px; backface-visibility: hidden; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 8px 10px; text-align: center; }
+  .front { background: rgba(255, 255, 255, .07); border: 1px dashed rgba(255, 255, 255, .28); font-size: 44px; color: rgba(255, 255, 255, .55); }
+  .back { transform: rotateY(180deg); background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .25); backdrop-filter: blur(4px); }
+  .medal { font-size: 30px; line-height: 1; }
+  .name { font-size: 20px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px; }
+  .meta { font-size: 14px; color: #cbd5e1; margin-top: 2px; white-space: nowrap; }
+  .p1 .name { font-size: 24px; }
+  .p1 .back { box-shadow: 0 0 36px rgba(251, 191, 36, .45); border-color: rgba(251, 191, 36, .7); }
+  .block { border-radius: 12px 12px 4px 4px; display: flex; align-items: flex-start; justify-content: center; padding-top: 10px;
+    font-size: 34px; font-weight: 800; color: rgba(15, 23, 42, .75); }
+  .p1 .block { height: 130px; background: linear-gradient(180deg, #fde68a, #f59e0b); }
+  .p2 .block { height: 96px; background: linear-gradient(180deg, #f1f5f9, #94a3b8); }
+  .p3 .block { height: 72px; background: linear-gradient(180deg, #fdba74, #c2410c); }
+  .suspense .card-inner { animation: shake .12s linear infinite; }
+  .suspense .front { box-shadow: 0 0 30px rgba(94, 234, 212, .6); color: #5eead4; }
+  @keyframes shake { 25% { transform: translateX(-3px) rotate(-1deg); } 75% { transform: translateX(3px) rotate(1deg); } }
+  .extras { z-index: 1; width: 100%; max-width: 900px; margin-top: 14px; display: grid; gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); overflow-y: auto; flex: 1 1 auto; align-content: start; padding: 2px; }
+  .extra { height: 44px; perspective: 700px; }
+  .extra .face { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 0 12px; font-size: 15px; border-radius: 10px; }
+  .extra .front { font-size: 15px; }
+  .extra.revealed .card-inner { transform: rotateY(180deg); }
+  .place { font-weight: 800; color: #5eead4; min-width: 32px; }
+  .extra .name { font-size: 16px; margin: 0; flex: 1; text-align: left; }
+  .extra .meta { font-size: 13px; margin: 0; }
+  footer { z-index: 6; display: flex; gap: 10px; align-items: center; margin-top: auto; padding-top: 12px; }
+  button { font: inherit; font-size: 16px; font-weight: 700; border-radius: 999px; padding: 10px 22px; cursor: pointer; border: 0; }
+  button.primary { background: #2dd4bf; color: #042f2e; box-shadow: 0 6px 20px rgba(45, 212, 191, .35); }
+  button.primary:hover { background: #5eead4; }
+  button.ghost { background: transparent; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, .3); }
+  button:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+  .done { font-size: 20px; font-weight: 700; color: #fde68a; }
+  .empty { margin: auto; text-align: center; color: #e2e8f0; font-size: 20px; z-index: 1; }
+  .hint { color: #94a3b8; font-size: 13px; }
+  @media (max-width: 560px) { .name { font-size: 16px; } .p1 .name { font-size: 18px; } .block { font-size: 24px; } }
+  @media (prefers-reduced-motion: reduce) { .card-inner { transition: none; } .suspense .card-inner, .sparkles { animation: none; } }
+</style>
+<div class="stage">
+  <div class="sparkles"></div>
+  <canvas id="confetti"></canvas>
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p class="subtitle" id="subtitle"></p>
+  </header>
+  <section class="podium" id="podium"></section>
+  <section class="extras" id="extras"></section>
+  <footer id="footer"></footer>
+</div>
+<script>
+  const DATA = __PAYLOAD__;
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  const MEDALS = { 1: "🥇", 2: "🥈", 3: "🥉" };
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  $("eyebrow").textContent = DATA.eyebrow;
+  $("title").textContent = DATA.title;
+  $("subtitle").textContent = DATA.subtitle;
+
+  function ordinal(n) {
+    const s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  function faces(winner, extra) {
+    const inner = el("div", "card-inner");
+    const front = el("div", "face front", "?");
+    const back = el("div", "face back");
+    if (extra) {
+      back.append(el("span", "place", "#" + winner.place), el("span", "name", winner.name), el("span", "meta", winner.points));
+      back.title = `${winner.name} · ${winner.points} · ${winner.detail}`;
+    } else {
+      back.append(el("div", "medal", MEDALS[winner.place]), el("div", "name", winner.name),
+                  el("div", "meta", `${winner.points} · ${winner.detail}`));
+      back.title = winner.name;
+    }
+    inner.append(front, back);
+    return inner;
+  }
+
+  const cards = {};
+  if (!DATA.winners.length) {
+    $("podium").remove();
+    $("extras").remove();
+    $("footer").before(el("div", "empty", DATA.emptyText));
+  }
+  DATA.winners.forEach((winner) => {
+    if (winner.place <= 3) {
+      const spot = el("div", `spot p${winner.place}`);
+      const card = el("div", "card");
+      card.append(faces(winner, false));
+      spot.append(card, el("div", "block", String(winner.place)));
+      $("podium").append(spot);
+      cards[winner.place] = card;
+    } else {
+      const card = el("div", "extra");
+      card.append(faces(winner, true));
+      $("extras").append(card);
+      cards[winner.place] = card;
+    }
+  });
+  if (DATA.winners.length <= 3 && $("extras")) $("extras").style.display = "none";
+
+  const order = DATA.winners.map((w) => w.place).sort((a, b) => b - a);
+  let step = 0, busy = false;
+  const footer = $("footer");
+  const next = el("button", "primary");
+  const all = el("button", "ghost", "Reveal all");
+  const hint = el("span", "hint", "Space or → reveals the next place");
+  if (DATA.winners.length) footer.append(next, all, hint);
+
+  function label() {
+    if (step >= order.length) {
+      footer.replaceChildren(el("div", "done", DATA.doneText));
+      return;
+    }
+    next.textContent = `Reveal ${ordinal(order[step])} place`;
+    all.style.display = order.length - step > 1 ? "" : "none";
+  }
+
+  function reveal(place, instant) {
+    const card = cards[place];
+    return new Promise((resolve) => {
+      if (place === 1 && !instant && !reduced) {
+        card.classList.add("suspense");
+        setTimeout(() => { card.classList.remove("suspense"); card.classList.add("revealed"); confetti(); resolve(); }, 1400);
+      } else {
+        card.classList.add("revealed");
+        if (place === 1) confetti();
+        card.scrollIntoView && place > 3 && card.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+        setTimeout(resolve, instant ? 0 : 350);
+      }
+    });
+  }
+
+  async function revealNext() {
+    if (busy || step >= order.length) return;
+    busy = true;
+    await reveal(order[step], false);
+    step += 1;
+    busy = false;
+    label();
+  }
+
+  async function revealAll() {
+    if (busy) return;
+    busy = true;
+    while (step < order.length) {
+      const place = order[step];
+      if (place === 1) { await reveal(1, false); } else { await reveal(place, true); await new Promise((r) => setTimeout(r, 90)); }
+      step += 1;
+    }
+    busy = false;
+    label();
+  }
+
+  next.addEventListener("click", revealNext);
+  all.addEventListener("click", revealAll);
+  document.addEventListener("keydown", (event) => {
+    if ([" ", "Enter", "ArrowRight"].includes(event.key)) { event.preventDefault(); revealNext(); }
+  });
+  if (DATA.winners.length) label();
+  if (DATA.revealAll) revealAll();
+
+  function confetti() {
+    if (reduced) return;
+    const canvas = $("confetti"), ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr; canvas.height = canvas.clientHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const colors = ["#fbbf24", "#2dd4bf", "#f472b6", "#a78bfa", "#f8fafc", "#fb923c"];
+    const bits = Array.from({ length: 180 }, () => ({
+      x: W / 2 + (Math.random() - .5) * 120, y: H * .45, vx: (Math.random() - .5) * 13, vy: -Math.random() * 13 - 4,
+      size: 5 + Math.random() * 6, color: colors[Math.floor(Math.random() * colors.length)], spin: Math.random() * 6, turn: (Math.random() - .5) * .3,
+    }));
+    const started = performance.now();
+    (function frame(now) {
+      const t = now - started;
+      ctx.clearRect(0, 0, W, H);
+      bits.forEach((b) => {
+        b.vy += .32; b.vx *= .99; b.x += b.vx; b.y += b.vy; b.spin += b.turn;
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.spin); ctx.globalAlpha = Math.max(0, 1 - t / 3200);
+        ctx.fillStyle = b.color; ctx.fillRect(-b.size / 2, -b.size / 4, b.size, b.size / 2); ctx.restore();
+      });
+      if (t < 3200) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+    })(started);
+  }
+</script>

@@ -6,6 +6,8 @@ you know exactly who deserves the voucher.
 
 No accounts, no database, nothing to install for participants.
 
+**Demo here:** https://meeting-quiz.streamlit.app/
+
 ![Run a quiz while sharing your screen](docs/screenshots/run.png)
 
 ## Highlights
